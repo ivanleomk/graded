@@ -98,3 +98,13 @@ When `ev.run()` completes, the following files are written to the directory cont
 3. **`traces.json`**: List of structured LLM calls made via `ev.llm_judge`.
 4. **`metadata.json`**: Optional metadata.
 5. **`artifacts/`**: Subfolder containing copy-back files preserved during the evaluation run.
+
+## Agent Skills
+
+You can install the `graded-verifier` skill to teach your AI coding agents (such as Cursor or Claude Code) how to write robust `graded` verifiers:
+
+```bash
+npx skills add <github-username>/eval-helpers/.agents/skills/graded-verifier
+```
+
+
