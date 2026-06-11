@@ -13,9 +13,11 @@ This is a standard Harbor-compatible task configuration that asks an agent to dr
 * **`environment/Dockerfile`**: A lightweight Python environment where the task is executed.
 * **`solution/solve.sh`**: The oracle solution script that automatically produces a passing `blog-post.md` file.
 * **`tests/test.sh`**: The test entrypoint script called by Harbor.
-* **`tests/test_outputs.py`**: The verification script using `graded.Evaluator` with two criteria:
-  1. `file_exists` (weight = `0.5`)
-  2. `word_count` (weight = `0.5`)
+* **`tests/test_outputs.py`**: The verification script using `graded.Evaluator` with four criteria:
+  1. `file_exists` (weight = `0.1`, fatal check)
+  2. `clarity` (weight = `0.4`, evaluated via LLM judge)
+  3. `succinctness` (weight = `0.4`, evaluated via LLM judge)
+  4. `trajectory_check` (weight = `0.1`, verifies that `echo "hello world!"` was executed)
 
 ---
 
@@ -44,7 +46,9 @@ We have included a sample run of this job under [sf_blog_post/sample_job/](sf_bl
   {
     "reward": 1.0,
     "file_exists": 1.0,
-    "word_count": 1.0
+    "clarity": 1.0,
+    "succinctness": 1.0,
+    "trajectory_check": 1.0
   }
   ```
 * **`verifier/test-stdout.txt`**: Standard output from the verifier script execution.

@@ -3,10 +3,12 @@ import json
 import shutil
 import logging
 from pathlib import Path
-from typing import Callable, Any, Dict, List, Optional, Type, Union
+from typing import Callable, Any, Dict, List, Optional, Type, Union, TypeVar
 from pydantic import BaseModel
 
 from graded.types import Criterion, Trajectory
+
+T = TypeVar("T", bound=BaseModel)
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
@@ -168,14 +170,14 @@ class Evaluator:
 
     def llm_judge(
         self,
-        response_model: Type[BaseModel],
+        response_model: Type[T],
         system: str,
         prompt: str,
         model: str,
         client: Optional[Any] = None,
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs,
-    ) -> Any:
+    ) -> T:
         """Call instructor LLM judge with structured responses and trace the call.
 
         Args:

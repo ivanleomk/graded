@@ -9,4 +9,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install graded (which pulls in pydantic, instructor, etc.)
-RUN pip install --no-cache-dir graded
+RUN pip install --no-cache-dir "cryptography<46.0.0" && pip install --no-cache-dir graded
+
+
+

@@ -1,5 +1,0 @@
-=== Start Evaluation ===
-CRITERION: file_exists (weight=0.5) -> Score: 1.0
-CRITERION: word_count (weight=0.5) -> Score: 1.0
-Final Computed Reward: 1.0000
-=== Evaluation Finished ===

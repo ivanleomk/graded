@@ -1,6 +1,6 @@
 {
     "task": {
-        "path": "/Users/ivanleo/Documents/coding/eval-helpers/examples/sf_blog_post",
+        "path": "examples/sf_blog_post",
         "git_url": null,
         "git_commit_id": null,
         "name": null,
@@ -9,24 +9,26 @@
         "download_dir": null,
         "source": "examples"
     },
-    "trial_name": "sf_blog_post__SbypKag",
-    "trials_dir": "jobs/2026-06-10__21-49-21",
+    "trial_name": "sf_blog_post__LPzDbLn",
+    "trials_dir": "jobs/examples",
     "timeout_multiplier": 1.0,
     "agent_timeout_multiplier": null,
     "verifier_timeout_multiplier": null,
     "agent_setup_timeout_multiplier": null,
     "environment_build_timeout_multiplier": null,
     "agent": {
-        "name": "oracle",
+        "name": "mini-swe-agent",
         "import_path": null,
-        "model_name": null,
+        "model_name": "gemini/gemini-3.5-flash",
         "skills": [],
         "override_timeout_sec": null,
         "override_setup_timeout_sec": null,
         "max_timeout_sec": null,
         "extra_allowed_hosts": [],
         "kwargs": {},
-        "env": {},
+        "env": {
+            "GEMINI_API_KEY": "${GEMINI_API_KEY}"
+        },
         "mcp_servers": []
     },
     "environment": {
@@ -50,10 +52,13 @@
     "verifier": {
         "override_timeout_sec": null,
         "max_timeout_sec": null,
-        "env": {},
+        "env": {
+            "GEMINI_API_KEY": "${GEMINI_API_KEY}",
+            "LITELLM_DROP_PARAMS": "True"
+        },
         "disable": false
     },
     "artifacts": [],
     "extra_instruction_paths": [],
-    "job_id": "5184f671-00a7-455d-81ee-d9250a631351"
+    "job_id": "945cc899-3bc7-4997-bbca-325e8a449fca"
 }
