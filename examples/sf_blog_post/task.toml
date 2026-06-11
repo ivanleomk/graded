@@ -1,6 +1,6 @@
 [task]
-id = "sf_blog_post"
-name = "Write a blog post about San Francisco"
+name = "graded/sf-blog-post"
+description = "Write a blog post about San Francisco"
 category = "content_creation"
 timeout = 300
 
