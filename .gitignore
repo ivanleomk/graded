@@ -32,3 +32,7 @@ MANIFEST
 .coverage
 .cache
 htmlcov/
+
+# Local testing scratch directories
+scratch/
+run_env/
