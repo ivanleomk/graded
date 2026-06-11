@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eval-helpers"
+version = "0.1.0"
+description = "Defensive verifier framework and helpers for Harbor evaluations"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "pydantic>=2.0",
+    "instructor>=1.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
