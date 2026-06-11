@@ -19,7 +19,7 @@ class BlogRubric(BaseModel):
 def main():
     # Initialize the Evaluator for Harbor environment paths
     ev = Evaluator(
-        workspace="/workspace",
+        workspace="/app",
         output_path="/logs/verifier/reward.json"
     )
 
