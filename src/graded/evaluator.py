@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Callable, Any, Dict, List, Optional, Type, Union
 from pydantic import BaseModel
 
-from eval_helpers.trajectory import Trajectory
+from graded.types import Criterion, Trajectory
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
@@ -25,9 +25,13 @@ class Evaluator:
         self.workspace = Path(workspace)
         self.output_path = Path(output_path)
         self.auto_save_artifacts = auto_save_artifacts
-        self.artifacts_dir = Path(artifacts_dir) if artifacts_dir else self.output_path.parent / "artifacts"
+        self.artifacts_dir = (
+            Path(artifacts_dir)
+            if artifacts_dir
+            else self.output_path.parent / "artifacts"
+        )
         self.metadata: Dict[str, Any] = metadata or {}
-        self.criteria: List[Dict[str, Any]] = []
+        self.criteria: List[Criterion] = []
         self.scores: Dict[str, float] = {}
         self.traces: List[Dict[str, Any]] = []
 
@@ -41,10 +45,11 @@ class Evaluator:
         """
 
         def decorator(func: Callable[[Path], Any]):
-            existing_names = {c["name"] for c in self.criteria}
-            if name in existing_names:
+            if any(c.name == name for c in self.criteria):
                 raise ValueError(f"Duplicate criterion name: '{name}'")
-            self.criteria.append({"name": name, "weight": weight, "func": func, "fatal": fatal})
+            self.criteria.append(
+                Criterion(name=name, weight=weight, fatal=fatal, func=func)
+            )
             return func
 
         return decorator
@@ -76,7 +81,9 @@ class Evaluator:
         except Exception as e:
             logging.error(f"Failed to save directory artifact {dirname}: {e}")
 
-    def load_json(self, filename: str, save_artifact: Optional[bool] = None) -> Optional[Any]:
+    def load_json(
+        self, filename: str, save_artifact: Optional[bool] = None
+    ) -> Optional[Any]:
         """Safely loads and parses JSON from the workspace.
 
         Args:
@@ -90,7 +97,9 @@ class Evaluator:
             return None
         try:
             raw = path.read_text(encoding="utf-8")
-            should_save = save_artifact if save_artifact is not None else self.auto_save_artifacts
+            should_save = (
+                save_artifact if save_artifact is not None else self.auto_save_artifacts
+            )
             if should_save:
                 self._save_artifact(filename, raw)
             return json.loads(raw)
@@ -98,7 +107,9 @@ class Evaluator:
             logging.error(f"Error parsing JSON file {filename}: {e}")
             return None
 
-    def read_file(self, filename: str, save_artifact: Optional[bool] = None) -> Optional[str]:
+    def read_file(
+        self, filename: str, save_artifact: Optional[bool] = None
+    ) -> Optional[str]:
         """Safely reads file content from the workspace.
 
         Args:
@@ -112,7 +123,9 @@ class Evaluator:
             return None
         try:
             content = path.read_text(encoding="utf-8")
-            should_save = save_artifact if save_artifact is not None else self.auto_save_artifacts
+            should_save = (
+                save_artifact if save_artifact is not None else self.auto_save_artifacts
+            )
             if should_save:
                 self._save_artifact(filename, content)
             return content
@@ -226,6 +239,34 @@ class Evaluator:
             self.traces.append(failed_trace)
             raise e
 
+    def _score_criterion(self, crit: Criterion) -> float:
+        """Run a single criterion and coerce its result to a float score.
+
+        A crash inside the criterion is caught and scored 0.0. A return value
+        that is not ``bool | int | float`` raises ``ValueError`` (a likely
+        forgotten ``return``).
+        """
+        try:
+            res = crit.func(self.workspace)
+        except Exception as e:
+            logging.error(
+                f"Failed executing criterion '{crit.name}': {e}", exc_info=True
+            )
+            print(
+                f"CRITERION: {crit.name} (weight={crit.weight}) -> FAILED (Score: 0.0)"
+            )
+            return 0.0
+
+        if not isinstance(res, (bool, int, float)):
+            raise ValueError(
+                f"Criterion '{crit.name}' must return bool | int | float, "
+                f"got {type(res).__name__}. Did you forget a return?"
+            )
+
+        score = float(res)  # float(True) == 1.0, float(False) == 0.0
+        print(f"CRITERION: {crit.name} (weight={crit.weight}) -> Score: {score}")
+        return score
+
     def run(self):
         """Executes all criteria, aggregates weighted scores, and writes outputs."""
         total_weight = 0.0
@@ -233,35 +274,16 @@ class Evaluator:
 
         print("=== Start Evaluation ===")
         for crit in self.criteria:
-            name = crit["name"]
-            weight = crit["weight"]
-            func = crit["func"]
-            fatal = crit["fatal"]
-            total_weight += weight
+            total_weight += crit.weight
+            score = self._score_criterion(crit)
+            self.scores[crit.name] = score
+            weighted_score += score * crit.weight
 
-            try:
-                res = func(self.workspace)
-                if isinstance(res, bool):
-                    score = 1.0 if res else 0.0
-                elif isinstance(res, (int, float)):
-                    score = float(res)
-                else:
-                    score = 0.0
-                print(f"CRITERION: {name} (weight={weight}) -> Score: {score}")
-            except Exception as e:
-                logging.error(
-                    f"Failed executing criterion '{name}': {e}", exc_info=True
+            if crit.fatal and score == 0.0:
+                print(
+                    f"FATAL: Criterion '{crit.name}' failed. Short-circuiting to 0.0."
                 )
-                score = 0.0
-                print(f"CRITERION: {name} (weight={weight}) -> FAILED (Score: 0.0)")
-
-            self.scores[name] = score
-            weighted_score += score * weight
-
-            if fatal and score == 0.0:
-                print(f"FATAL: Criterion '{name}' failed. Short-circuiting to 0.0.")
-                final_reward = 0.0
-                self._write_outputs(final_reward)
+                self._write_outputs(0.0)
                 return
 
         final_reward = (weighted_score / total_weight) if total_weight > 0 else 0.0

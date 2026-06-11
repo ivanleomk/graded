@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 from pydantic import BaseModel, Field
-from eval_helpers import Evaluator
+from graded import Evaluator
 
 class DummyRubric(BaseModel):
     score: float = Field(description="Score between 0.0 and 1.0 based on politeness.")

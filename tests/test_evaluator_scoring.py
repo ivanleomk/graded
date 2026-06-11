@@ -21,10 +21,10 @@ def test_criterion_registration(workspace_setup):
         return True
         
     assert len(ev.criteria) == 1
-    assert ev.criteria[0]["name"] == "check_1"
-    assert ev.criteria[0]["weight"] == 2.5
-    assert ev.criteria[0]["func"] == my_check
-    assert ev.criteria[0]["fatal"] == False
+    assert ev.criteria[0].name == "check_1"
+    assert ev.criteria[0].weight == 2.5
+    assert ev.criteria[0].func == my_check
+    assert ev.criteria[0].fatal == False
 
 def test_run_weighted_scoring(workspace_setup):
     ev = workspace_setup["evaluator"]
@@ -101,6 +101,35 @@ def test_fatal_criterion_fails(workspace_setup):
     # Fatal criterion failed -> reward is 0.0, content_check never ran
     assert reward_data["reward"] == 0.0
     assert "content_check" not in reward_data
+
+def test_criterion_invalid_return_type_raises(workspace_setup):
+    ev = workspace_setup["evaluator"]
+
+    @ev.criterion("forgot_return")
+    def forgot_return(ws):
+        pass  # returns None
+
+    with pytest.raises(ValueError, match="must return bool | int | float"):
+        ev.run()
+
+
+def test_criterion_crash_still_scores_zero(workspace_setup):
+    ev = workspace_setup["evaluator"]
+    output_path = workspace_setup["output_path"]
+
+    @ev.criterion("ok", weight=1.0)
+    def ok(ws):
+        return True
+
+    @ev.criterion("boom", weight=1.0)
+    def boom(ws):
+        raise RuntimeError("kaboom")
+
+    # A genuine crash is caught and scored 0.0 (not raised), unlike a bad return type.
+    ev.run()
+    reward_data = json.loads(output_path.read_text())
+    assert reward_data == {"reward": 0.5, "ok": 1.0, "boom": 0.0}
+
 
 def test_fatal_criterion_passes(workspace_setup):
     ev = workspace_setup["evaluator"]

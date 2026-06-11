@@ -1,6 +1,6 @@
 import json
 import os
-from eval_helpers import Evaluator
+from graded import Evaluator
 
 
 def test_save_file(workspace_setup):

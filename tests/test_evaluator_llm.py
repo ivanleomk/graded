@@ -31,6 +31,7 @@ def test_llm_judge_real_success(workspace_setup):
         "response_model_schema": DummyRubric.model_json_schema(),
         "status": "success",
         "response": {"score": result.score, "reasoning": result.reasoning},
+        "metadata": {},
     }
 
 
@@ -59,4 +60,5 @@ def test_llm_judge_real_failure(workspace_setup):
         "response_model_schema": DummyRubric.model_json_schema(),
         "status": "failed",
         "error": str(exc_info.value),
+        "metadata": {},
     }
