@@ -29,19 +29,20 @@ ev = Evaluator(
     auto_save_artifacts=True
 )
 
-# 1. Declare a standard criterion
+# 1. Declare a standard criterion (workspace parameter is optional)
 @ev.criterion(name="has_output_file", weight=1.0)
-def check_output(workspace: Path) -> bool:
+def check_output() -> bool:
     return ev.file_exists("output.txt")
 
-# 2. Declare a fatal criterion (short-circuits final score to 0.0 if failed)
+# 2. Declare a fatal criterion (takes workspace Path parameter to inspect files directly)
 @ev.criterion(name="no_syntax_errors", weight=2.0, fatal=True)
 def check_syntax(workspace: Path) -> bool:
-    return True
+    # Use workspace parameter to inspect the files on disk
+    return (workspace / "src").is_dir()
 
 # 3. Declare a fractional scoring criterion
 @ev.criterion(name="test_pass_rate", weight=3.0)
-def check_tests(workspace: Path) -> float:
+def check_tests() -> float:
     return 0.8  # Returns a score between 0.0 and 1.0
 
 if __name__ == "__main__":
@@ -52,10 +53,25 @@ if __name__ == "__main__":
 
 ### 1. Criteria Declarations (`@ev.criterion`)
 Define check functions using the `@ev.criterion` decorator.
+
+Check functions can optionally accept the workspace directory as a `pathlib.Path` parameter if they need to perform custom filesystem operations. If a function does not accept any arguments, it will be executed without the workspace parameter.
+
 - **`name`**: Unique identifier for the criterion.
 - **`weight`**: Relative weight of the score in the final weighted average calculation.
 - **`fatal`**: If `True`, any score of `0.0` or `False` immediately short-circuits the final score to `0.0`.
 - **Return Value**: Must return a `bool`, `int`, or `float`.
+
+#### Programmatic Registration (Without Decorators)
+If you prefer to define functions normally, you can register them programmatically without using decorator syntax:
+
+```python
+def check_output(workspace: Path) -> bool:
+    return (workspace / "output.txt").is_file()
+
+# Register directly
+ev.criterion("has_output_file", weight=1.0)(check_output)
+```
+
 
 ### 2. LLM Judge with Automatic Tracing
 Integrate with `instructor` to run structured, schema-validated LLM grading prompts. Prompt, parameters, response schema, and LLM responses are automatically logged to `traces.json`.

@@ -150,3 +150,22 @@ def test_fatal_criterion_passes(workspace_setup):
     # (1.0 * 1.0 + 0.8 * 1.0) / 2.0 = 0.9
     assert reward_data["reward"] == 0.9
     assert reward_data == {"reward": 0.9, "file_check": 1.0, "content_check": 0.8}
+
+
+def test_criterion_optional_workspace(workspace_setup):
+    ev = workspace_setup["evaluator"]
+    output_path = workspace_setup["output_path"]
+    
+    @ev.criterion("no_args", weight=1.0)
+    def check_no_args():
+        return 1.0
+
+    @ev.criterion("with_args", weight=1.0)
+    def check_with_args(ws):
+        assert ws == ev.workspace
+        return 1.0
+
+    ev.run()
+    
+    reward_data = json.loads(output_path.read_text())
+    assert reward_data == {"reward": 1.0, "no_args": 1.0, "with_args": 1.0}

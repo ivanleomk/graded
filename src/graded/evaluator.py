@@ -2,6 +2,7 @@ import os
 import json
 import shutil
 import logging
+import inspect
 from pathlib import Path
 from typing import Callable, Any, Dict, List, Optional, Type, Union, TypeVar
 from pydantic import BaseModel
@@ -46,7 +47,7 @@ class Evaluator:
             fatal: If True, a score of 0.0 short-circuits the entire evaluation to 0.0.
         """
 
-        def decorator(func: Callable[[Path], Any]):
+        def decorator(func: Callable[..., Any]):
             if any(c.name == name for c in self.criteria):
                 raise ValueError(f"Duplicate criterion name: '{name}'")
             self.criteria.append(
@@ -69,12 +70,17 @@ class Evaluator:
         """Explicitly save content to the artifacts directory."""
         self._save_artifact(filename, content)
 
-    def save_dir(self, dirname: str) -> None:
+    def save_dir(self, dirname: Union[str, Path]) -> None:
         """Copy an entire directory from the workspace to the artifacts directory."""
-        src = self.workspace / dirname
-        dest = self.artifacts_dir / dirname
+        if isinstance(dirname, Path):
+            src = dirname
+            dest = self.artifacts_dir / (dirname.name if dirname.is_absolute() else dirname)
+        else:
+            src = self.workspace / dirname
+            dest = self.artifacts_dir / dirname
+
         if not src.is_dir():
-            logging.warning(f"Directory {dirname} not found in workspace.")
+            logging.warning(f"Directory {dirname} not found.")
             return
         try:
             if dest.exists():
@@ -249,7 +255,15 @@ class Evaluator:
         forgotten ``return``).
         """
         try:
-            res = crit.func(self.workspace)
+            sig = inspect.signature(crit.func)
+            has_positional = any(
+                p.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+                for p in sig.parameters.values()
+            )
+            if has_positional:
+                res = crit.func(self.workspace)
+            else:
+                res = crit.func()
         except Exception as e:
             logging.error(
                 f"Failed executing criterion '{crit.name}': {e}", exc_info=True

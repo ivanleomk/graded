@@ -54,6 +54,23 @@ def test_save_dir_missing(workspace_setup):
     assert not artifacts_dir.exists()
 
 
+def test_save_dir_with_path_object(workspace_setup, tmp_path):
+    from pathlib import Path
+    ev = workspace_setup["evaluator"]
+    output_path = workspace_setup["output_path"]
+
+    # Test with absolute path overriding workspace
+    external_dir = tmp_path / "external_dir"
+    external_dir.mkdir()
+    (external_dir / "c.txt").write_text("ccc")
+
+    ev.save_dir(external_dir)
+
+    artifacts_dir = output_path.parent / "artifacts" / "external_dir"
+    assert artifacts_dir.is_dir()
+    assert (artifacts_dir / "c.txt").read_text() == "ccc"
+
+
 def test_auto_capture_read_file(tmp_path):
     ws = tmp_path / "workspace"
     ws.mkdir()

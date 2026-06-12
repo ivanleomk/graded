@@ -31,19 +31,22 @@ if __name__ == "__main__":
 
 ## 2. Defining Criteria
 
-Use the `@ev.criterion` decorator to declare checks.
+Use the `@ev.criterion` decorator to declare checks. Check functions can optionally accept the workspace path (as a `pathlib.Path` object) if they need to inspect files on disk. If the function does not need to access the workspace path directly, it can be defined with zero arguments.
+
 - **Fatal checks**: Use `fatal=True` on gatekeeper checks (e.g. file existence) to immediately short-circuit the final reward to `0.0` on failure.
 - **Fractional checks**: Return a float between `0.0` and `1.0` to award partial credit (e.g. test pass rate).
 - **Weights**: Distribute weights to control the contribution of each check to the final average reward.
 
 ```python
+# No arguments:
 @ev.criterion("file_exists", weight=0.1, fatal=True)
-def check_file(workspace: Path) -> bool:
+def check_file() -> bool:
     return ev.file_exists("output.txt")
 
+# With workspace argument:
 @ev.criterion("fractional_tests", weight=0.9)
 def check_tests(workspace: Path) -> float:
-    # return a float between 0.0 and 1.0
+    # Use the workspace Path object to do custom filesystem operations
     return 0.8
 ```
 

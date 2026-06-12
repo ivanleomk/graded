@@ -25,7 +25,7 @@ class Criterion(BaseModel):
     name: str
     weight: float = 1.0
     fatal: bool = False
-    func: Callable[[Path], Any]
+    func: Callable[..., Any]
 
     model_config = {"arbitrary_types_allowed": True}
 
